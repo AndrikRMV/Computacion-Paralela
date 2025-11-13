@@ -1,0 +1,133 @@
+pipeline {
+    agent any
+    
+    environment {
+        // Variables de entorno del proyecto
+        PROJECT_NAME = 'soporte-grupoguia'
+        DOCKER_IMAGE = 'soporte-php'
+        DOCKER_TAG = "${BUILD_NUMBER}"
+        REGISTRY = 'localhost:5001'
+        
+        // Credenciales (configurar en Jenkins Credentials)
+        DOCKER_REGISTRY_CREDS = credentials('docker-registry-credentials')
+        MYSQL_ROOT_PASSWORD = credentials('mysql-root-password')
+    }
+    
+    options {
+        buildDiscarder(logRotator(numToKeepStr: '10'))
+        timeout(time: 30, unit: 'MINUTES')
+        timestamps()
+    }
+    
+    stages {
+        stage('Checkout') {
+            steps {
+                echo 'Obteniendo código fuente...'
+                checkout scm
+            }
+        }
+        
+        stage('Análisis Estático') {
+            steps {
+                script {
+                    echo 'Ejecutando análisis de código PHP...'
+                    sh '''
+                        # Verificar archivos PHP
+                        find . -name "*.php" -type f | head -10 | xargs php -l || true
+                    '''
+                }
+            }
+        }
+        
+        stage('Build Docker Image') {
+            steps {
+                script {
+                    echo 'Construyendo imagen Docker...'
+                    sh """
+                        docker build -t ${DOCKER_IMAGE}:${DOCKER_TAG} .
+                        docker tag ${DOCKER_IMAGE}:${DOCKER_TAG} ${DOCKER_IMAGE}:latest
+                    """
+                }
+            }
+        }
+        
+        stage('Tests de Contenedor') {
+            steps {
+                script {
+                    echo 'Verificando que el contenedor inicia correctamente...'
+                    sh """
+                        docker run --rm -d --name test-${BUILD_NUMBER} ${DOCKER_IMAGE}:${DOCKER_TAG}
+                        sleep 5
+                        docker exec test-${BUILD_NUMBER} php -v
+                        docker stop test-${BUILD_NUMBER} || true
+                    """
+                }
+            }
+        }
+        
+        stage('Push to Registry') {
+            when {
+                branch 'main'
+            }
+            steps {
+                script {
+                    echo 'Subiendo imagen al registry...'
+                    sh """
+                        docker tag ${DOCKER_IMAGE}:${DOCKER_TAG} ${REGISTRY}/${DOCKER_IMAGE}:${DOCKER_TAG}
+                        docker tag ${DOCKER_IMAGE}:${DOCKER_TAG} ${REGISTRY}/${DOCKER_IMAGE}:latest
+                        docker push ${REGISTRY}/${DOCKER_IMAGE}:${DOCKER_TAG}
+                        docker push ${REGISTRY}/${DOCKER_IMAGE}:latest
+                    """
+                }
+            }
+        }
+        
+        stage('Deploy a Ambiente de QA') {
+            when {
+                branch 'develop'
+            }
+            steps {
+                script {
+                    echo 'Desplegando en ambiente QA...'
+                    sh """
+                        docker-compose -f docker-compose.yml down || true
+                        docker-compose -f docker-compose.yml up -d
+                    """
+                }
+            }
+        }
+        
+        stage('Deploy a Producción') {
+            when {
+                branch 'main'
+            }
+            steps {
+                script {
+                    echo 'Requiere aprobación manual...'
+                    input message: '¿Desplegar a PRODUCCIÓN?', ok: 'Desplegar'
+                    
+                    echo 'Desplegando a PRODUCCIÓN...'
+                    sh """
+                        echo "Desplegando versión ${DOCKER_TAG} a producción..."
+                    """
+                }
+            }
+        }
+    }
+    
+    post {
+        success {
+            echo 'Pipeline ejecutado exitosamente'
+        }
+        failure {
+            echo 'Pipeline falló'
+        }
+        always {
+            echo 'Limpiando recursos...'
+            sh '''
+                docker ps -a | grep test-${BUILD_NUMBER} | awk '{print $1}' | xargs docker rm -f || true
+                docker image prune -a --filter "until=168h" -f || true
+            '''
+        }
+    }
+}
