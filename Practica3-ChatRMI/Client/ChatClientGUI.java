@@ -31,7 +31,7 @@ public class ChatClientGUI extends UnicastRemoteObject implements ChatClientInte
      * Constructor del cliente
      */
     public ChatClientGUI(String username, String serverIP, int serverPort) throws RemoteException {
-        super();
+        super(0); // Exportar en puerto anónimo
         this.username = username;
         this.serverIP = serverIP;
         this.serverPort = serverPort;
@@ -218,16 +218,21 @@ public class ChatClientGUI extends UnicastRemoteObject implements ChatClientInte
     private void updateUserList() {
         try {
             List<String> users = server.getOnlineUsers();
+            System.out.println("DEBUG: Lista de usuarios recibida: " + users);
             SwingUtilities.invokeLater(() -> {
                 userListModel.clear();
                 for (String user : users) {
                     if (!user.equals(username)) {
+                        System.out.println("DEBUG: Agregando usuario a la lista: " + user);
                         userListModel.addElement(user);
                     }
                 }
+                System.out.println("DEBUG: Lista actualizada. Total en GUI: " + userListModel.size());
             });
         } catch (RemoteException e) {
+            System.err.println("DEBUG: Error al actualizar lista: " + e.getMessage());
             appendToChat("❌ Error al actualizar lista de usuarios\n");
+            e.printStackTrace();
         }
     }
     
@@ -267,12 +272,14 @@ public class ChatClientGUI extends UnicastRemoteObject implements ChatClientInte
     
     @Override
     public void userJoined(String username) throws RemoteException {
+        System.out.println("DEBUG: Notificación recibida - usuario conectado: " + username);
         appendToChat("✅ " + username + " se ha conectado\n");
         updateUserList();
     }
     
     @Override
     public void userLeft(String username) throws RemoteException {
+        System.out.println("DEBUG: Notificación recibida - usuario desconectado: " + username);
         appendToChat("👋 " + username + " se ha desconectado\n");
         updateUserList();
     }
