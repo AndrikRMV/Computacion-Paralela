@@ -60,5 +60,5 @@ echo ""
 echo "🎯 Iniciando servidor de chat..."
 echo ""
 
-# Ejecutar el servidor con la propiedad configurada
-java -Djava.rmi.server.hostname=$IP ChatServer $PUERTO
+# Ejecutar el servidor pasando IP y puerto como parámetros
+java -Djava.rmi.server.hostname=$IP ChatServer $IP $PUERTO

@@ -162,19 +162,16 @@ public class ChatServer extends UnicastRemoteObject implements ChatServerInterfa
      */
     public static void main(String[] args) {
         
-        if (args.length < 1) {
-            System.out.println("Uso: java ChatServer <puerto>");
-            System.out.println("Ejemplo: java ChatServer 1099");
+        if (args.length < 2) {
+            System.out.println("Uso: java ChatServer <IP> <puerto>");
+            System.out.println("Ejemplo: java ChatServer 192.168.1.100 1099");
             System.exit(1);
         }
         
         try {
-            int port = Integer.parseInt(args[0]);
+            String serverIP = args[0];
+            int port = Integer.parseInt(args[1]);
             
-            // Obtener IP del servidor
-            String serverIP = java.net.InetAddress.getLocalHost().getHostAddress();
-            
-            // Configurar la propiedad para RMI
             // Configurar la propiedad del sistema para RMI
             System.setProperty("java.rmi.server.hostname", serverIP);
             
