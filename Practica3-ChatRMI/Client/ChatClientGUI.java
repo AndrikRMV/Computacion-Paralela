@@ -135,6 +135,10 @@ public class ChatClientGUI extends UnicastRemoteObject implements ChatClientInte
                 
                 // Actualizar lista de usuarios
                 updateUserList();
+                
+                // Iniciar timer para actualizar lista periódicamente
+                Timer timer = new Timer(3000, e -> updateUserList());
+                timer.start();
             } else {
                 appendToChat("❌ Error: El nombre de usuario ya está en uso\n");
                 JOptionPane.showMessageDialog(frame, 
