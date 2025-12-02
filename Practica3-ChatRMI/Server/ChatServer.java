@@ -85,6 +85,29 @@ public class ChatServer extends UnicastRemoteObject implements ChatServerInterfa
     }
     
     /**
+     * Envía un mensaje directo a un usuario específico (via cola)
+     */
+    @Override
+    public void sendDirectMessage(String from, String to, String message) throws RemoteException {
+        System.out.println("💌 Mensaje directo de " + from + " → " + to + ": " + message);
+        
+        // Verificar que el destinatario existe
+        if (!connectedClients.containsKey(to)) {
+            throw new RemoteException("Usuario " + to + " no está conectado");
+        }
+        
+        // Encolar mensaje para el destinatario
+        String messageForRecipient = "[DIRECTO de " + from + "] " + message;
+        pendingMessages.computeIfAbsent(to, k -> new ArrayList<>()).add(messageForRecipient);
+        
+        // Encolar confirmación para el remitente
+        String confirmationForSender = "[Tú → " + to + " (Directo)] " + message;
+        pendingMessages.computeIfAbsent(from, k -> new ArrayList<>()).add(confirmationForSender);
+        
+        System.out.println("✅ Mensaje directo encolado");
+    }
+    
+    /**
      * Obtiene la lista de usuarios conectados
      */
     @Override

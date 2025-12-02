@@ -182,7 +182,7 @@ public class ChatClientGUI extends UnicastRemoteObject implements ChatClientInte
     }
     
     /**
-     * Envía un mensaje directo a un usuario específico (P2P)
+     * Envía un mensaje directo a un usuario específico (via servidor)
      */
     private void sendDirectMessage() {
         String selectedUser = userList.getSelectedValue();
@@ -204,17 +204,10 @@ public class ChatClientGUI extends UnicastRemoteObject implements ChatClientInte
         }
         
         try {
-            // Obtener referencia del cliente destino directamente
-            ChatClientInterface targetClient = server.getClientReference(selectedUser);
-            
-            if (targetClient != null) {
-                // Enviar mensaje directo (P2P - sin pasar por broadcast del servidor)
-                targetClient.receiveMessage(username, message, true);
-                appendToChat("[Tú → " + selectedUser + " (Directo)] " + message + "\n");
-                messageField.setText("");
-            } else {
-                appendToChat("❌ Usuario " + selectedUser + " no está disponible\n");
-            }
+            // Enviar mensaje directo via servidor (no P2P directo)
+            server.sendDirectMessage(username, selectedUser, message);
+            messageField.setText("");
+            // El mensaje aparecerá cuando el servidor lo devuelva via polling
             
         } catch (RemoteException e) {
             appendToChat("❌ Error al enviar mensaje directo: " + e.getMessage() + "\n");

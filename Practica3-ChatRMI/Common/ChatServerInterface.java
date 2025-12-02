@@ -31,6 +31,14 @@ public interface ChatServerInterface extends Remote {
     void broadcastMessage(String from, String message) throws RemoteException;
     
     /**
+     * Envía un mensaje directo a un usuario específico (via servidor)
+     * @param from Usuario que envía el mensaje
+     * @param to Usuario destinatario
+     * @param message Contenido del mensaje
+     */
+    void sendDirectMessage(String from, String to, String message) throws RemoteException;
+    
+    /**
      * Obtiene la lista de usuarios conectados
      * @return Lista de nombres de usuarios activos
      */
