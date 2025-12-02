@@ -16,7 +16,7 @@ Implementación de comunicación bidireccional entre dos programas Java independ
 
 ---
 
-```
+``````
 
 Paralela3P/---
 
@@ -116,7 +116,7 @@ cd Paralela3P/Practica1-Sockets   # o Practica2-RMI
 
 ./run-client.sh                    # En la Mac cliente- **Estado:** Completada- Obtiene la IP automáticamente
 
-```
+``````
 
 - **Carpeta:** `Practica1-Sockets/`- Compila y ejecuta el servidor
 
@@ -148,14 +148,13 @@ cd Paralela3P/Practica1-Sockets   # o Practica2-RMI
 
 - **Tema:** Por definir- Solicita la IP del servidor
 
-**Autor:** Andrés Meneses  
+**Autor:** Andrés Meneses
 
-**Institución:** CETI  - **Carpeta:** `Practica3/`- Actualiza el código automáticamente
+**Institución:** CETI - **Carpeta:** `Practica3/`- Actualiza el código automáticamente
 
-**Materia:** Programación Paralela  
+**Materia:** Programación Paralela
 
 **Periodo:** 3P 2025- Compila y ejecuta el cliente
-
 
 ---
 
@@ -169,13 +168,13 @@ Cada práctica está en su propia carpeta con su documentación específica. Par
 
 cd Server
 
-```bashjavac Server.java
+````bashjavac Server.java
 
 cd Paralela3P/Practica1-Socketsjava Server
 
 # Leer el README.md de esa práctica```
 
-```
+````
 
 **Cliente:**
 
@@ -183,14 +182,13 @@ cd Paralela3P/Practica1-Socketsjava Server
 
 cd Client
 
-**Autor:** Andrés Meneses  # Editar Client.java línea 19 con la IP del servidor
+**Autor:** Andrés Meneses # Editar Client.java línea 19 con la IP del servidor
 
-**Institución:** CETI  javac Client.java
+**Institución:** CETI javac Client.java
 
-**Materia:** Programación Paralela  java Client
+**Materia:** Programación Paralela java Client
 
 **Periodo:** 3P 2025```
-
 
 ---
 
@@ -206,6 +204,7 @@ cd Client
 ---
 
 ## Requisitos
+
 - Java JDK 8+
 - Dos Macs en la misma red WiFi
 - Puerto 1234 disponible
@@ -213,6 +212,7 @@ cd Client
 ---
 
 ## Mejoras Implementadas
+
 ✅ **Scripts de automatización** para simplificar compilación y ejecución
 ✅ **Detección automática de IP** en el servidor
 ✅ **Actualización dinámica** de la IP en el código del cliente
@@ -222,4 +222,7 @@ cd Client
 
 **Autor:** Andrik Meneses
 **Materia:** Programación Paralela - CETI
-`````
+
+```
+
+```

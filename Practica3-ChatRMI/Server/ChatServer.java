@@ -175,8 +175,6 @@ public class ChatServer extends UnicastRemoteObject implements ChatServerInterfa
             String serverIP = java.net.InetAddress.getLocalHost().getHostAddress();
             
             // Configurar la propiedad para RMI
-            System.setProperty("java.rmi.server.hostname", serverIP);
-            
             // Configurar la propiedad del sistema para RMI
             System.setProperty("java.rmi.server.hostname", serverIP);
             
