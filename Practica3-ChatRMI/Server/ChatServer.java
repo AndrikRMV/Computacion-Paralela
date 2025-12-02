@@ -177,6 +177,9 @@ public class ChatServer extends UnicastRemoteObject implements ChatServerInterfa
             // Configurar la propiedad para RMI
             System.setProperty("java.rmi.server.hostname", serverIP);
             
+            // Configurar la propiedad del sistema para RMI
+            System.setProperty("java.rmi.server.hostname", serverIP);
+            
             // Crear el registro RMI
             Registry registry = LocateRegistry.createRegistry(port);
             
