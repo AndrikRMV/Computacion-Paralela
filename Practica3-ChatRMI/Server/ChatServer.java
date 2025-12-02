@@ -71,19 +71,16 @@ public class ChatServer extends UnicastRemoteObject implements ChatServerInterfa
         // Lista de clientes que fallaron
         List<String> failedClients = new ArrayList<>();
         
-        // Enviar a todos los clientes
+        // Enviar a todos los clientes (incluyendo el remitente)
         for (Map.Entry<String, ChatClientInterface> entry : connectedClients.entrySet()) {
             String username = entry.getKey();
             ChatClientInterface client = entry.getValue();
             
-            // No enviar el mensaje de vuelta al remitente
-            if (!username.equals(from)) {
-                try {
-                    client.receiveMessage(from, message, false);
-                } catch (RemoteException e) {
-                    System.err.println("❌ Error al enviar a " + username);
-                    failedClients.add(username);
-                }
+            try {
+                client.receiveMessage(from, message, false);
+            } catch (RemoteException e) {
+                System.err.println("❌ Error al enviar a " + username);
+                failedClients.add(username);
             }
         }
         
