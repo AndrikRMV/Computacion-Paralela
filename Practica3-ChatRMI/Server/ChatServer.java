@@ -14,12 +14,16 @@ public class ChatServer extends UnicastRemoteObject implements ChatServerInterfa
     // Mapa thread-safe de usuarios conectados
     private Map<String, ChatClientInterface> connectedClients;
     
+    // Cola de mensajes pendientes por usuario: Map<username, List<mensaje>>
+    private Map<String, List<String>> pendingMessages;
+    
     /**
      * Constructor del servidor
      */
     public ChatServer() throws RemoteException {
         super();
         connectedClients = new ConcurrentHashMap<>();
+        pendingMessages = new ConcurrentHashMap<>();
         System.out.println("✅ Servidor de chat inicializado");
     }
     
@@ -38,10 +42,12 @@ public class ChatServer extends UnicastRemoteObject implements ChatServerInterfa
         
         // Registrar el cliente
         connectedClients.put(username, clientRef);
+        pendingMessages.putIfAbsent(username, new ArrayList<>());
+        
         System.out.println("✅ Usuario conectado: " + username + 
                           " (Total: " + connectedClients.size() + ")");
         
-        // Notificar a todos los demás clientes
+        // Notificar a todos los demás clientes (encolando mensaje)
         notifyUserJoined(username);
         
         return true;
@@ -62,32 +68,20 @@ public class ChatServer extends UnicastRemoteObject implements ChatServerInterfa
     }
     
     /**
-     * Envía un mensaje a todos los clientes conectados
+     * Envía un mensaje a todos los clientes conectados (guardando en cola)
      */
     @Override
     public void broadcastMessage(String from, String message) throws RemoteException {
         System.out.println("📢 Broadcast de " + from + ": " + message);
         
-        // Lista de clientes que fallaron
-        List<String> failedClients = new ArrayList<>();
+        String fullMessage = "[BROADCAST] " + from + ": " + message;
         
-        // Enviar a todos los clientes (incluyendo el remitente)
-        for (Map.Entry<String, ChatClientInterface> entry : connectedClients.entrySet()) {
-            String username = entry.getKey();
-            ChatClientInterface client = entry.getValue();
-            
-            try {
-                client.receiveMessage(from, message, false);
-            } catch (RemoteException e) {
-                System.err.println("❌ Error al enviar a " + username);
-                failedClients.add(username);
-            }
+        // Agregar mensaje a la cola de TODOS los clientes
+        for (String username : connectedClients.keySet()) {
+            pendingMessages.computeIfAbsent(username, k -> new ArrayList<>()).add(fullMessage);
         }
         
-        // Limpiar clientes desconectados
-        for (String failed : failedClients) {
-            connectedClients.remove(failed);
-        }
+        System.out.println("✅ Mensaje encolado para " + connectedClients.size() + " usuarios");
     }
     
     /**
@@ -107,51 +101,58 @@ public class ChatServer extends UnicastRemoteObject implements ChatServerInterfa
     }
     
     /**
-     * Notifica a todos los clientes que un usuario se unió
+     * Notifica a todos los clientes que un usuario se unió (encolando mensaje)
      */
     private void notifyUserJoined(String username) {
-        List<String> failedClients = new ArrayList<>();
+        String systemMessage = "[SISTEMA] " + username + " se ha unido al chat";
         
-        for (Map.Entry<String, ChatClientInterface> entry : connectedClients.entrySet()) {
-            String clientName = entry.getKey();
-            ChatClientInterface client = entry.getValue();
-            
+        // Encolar notificación para todos EXCEPTO el que se unió
+        for (String clientName : connectedClients.keySet()) {
             if (!clientName.equals(username)) {
-                try {
-                    client.userJoined(username);
-                } catch (RemoteException e) {
-                    failedClients.add(clientName);
-                }
+                pendingMessages.computeIfAbsent(clientName, k -> new ArrayList<>()).add(systemMessage);
             }
         }
         
-        // Limpiar clientes desconectados
-        for (String failed : failedClients) {
-            connectedClients.remove(failed);
-        }
+        System.out.println("📢 Notificación de ingreso encolada para " + (connectedClients.size() - 1) + " usuarios");
     }
     
     /**
-     * Notifica a todos los clientes que un usuario se desconectó
+     * Notifica a todos los clientes que un usuario se desconectó (encolando mensaje)
      */
     private void notifyUserLeft(String username) {
-        List<String> failedClients = new ArrayList<>();
+        String systemMessage = "[SISTEMA] " + username + " ha salido del chat";
         
-        for (Map.Entry<String, ChatClientInterface> entry : connectedClients.entrySet()) {
-            String clientName = entry.getKey();
-            ChatClientInterface client = entry.getValue();
-            
-            try {
-                client.userLeft(username);
-            } catch (RemoteException e) {
-                failedClients.add(clientName);
-            }
+        // Encolar notificación para todos los clientes restantes
+        for (String clientName : connectedClients.keySet()) {
+            pendingMessages.computeIfAbsent(clientName, k -> new ArrayList<>()).add(systemMessage);
         }
         
-        // Limpiar clientes desconectados
-        for (String failed : failedClients) {
-            connectedClients.remove(failed);
+        // Eliminar cola de mensajes del usuario desconectado
+        pendingMessages.remove(username);
+        
+        System.out.println("📢 Notificación de salida encolada para " + connectedClients.size() + " usuarios");
+    }
+    
+    /**
+     * Obtiene y limpia los mensajes pendientes para un usuario
+     */
+    @Override
+    public synchronized Map<String, List<String>> getPendingMessages(String username) throws RemoteException {
+        Map<String, List<String>> result = new HashMap<>();
+        
+        // Obtener mensajes pendientes
+        List<String> messages = pendingMessages.getOrDefault(username, new ArrayList<>());
+        
+        if (!messages.isEmpty()) {
+            result.put("messages", new ArrayList<>(messages));
+            // Limpiar mensajes entregados
+            pendingMessages.put(username, new ArrayList<>());
+            System.out.println("📬 Entregados " + messages.size() + " mensajes a " + username);
+        } else {
+            result.put("messages", new ArrayList<>());
         }
+        
+        return result;
     }
     
     /**

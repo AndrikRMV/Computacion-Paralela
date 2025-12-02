@@ -1,6 +1,7 @@
 import java.rmi.Remote;
 import java.rmi.RemoteException;
 import java.util.List;
+import java.util.Map;
 
 /**
  * Interfaz remota del servidor de chat
@@ -41,4 +42,11 @@ public interface ChatServerInterface extends Remote {
      * @return Referencia al cliente o null si no existe
      */
     ChatClientInterface getClientReference(String username) throws RemoteException;
+    
+    /**
+     * Obtiene los mensajes pendientes para un cliente y los marca como entregados
+     * @param username Nombre del usuario que solicita los mensajes
+     * @return Mapa con tipo de mensaje (broadcast/direct/system) y lista de mensajes
+     */
+    Map<String, List<String>> getPendingMessages(String username) throws RemoteException;
 }

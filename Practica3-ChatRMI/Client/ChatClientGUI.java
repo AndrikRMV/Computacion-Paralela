@@ -5,6 +5,8 @@ import java.rmi.Naming;
 import java.rmi.RemoteException;
 import java.rmi.server.UnicastRemoteObject;
 import java.util.List;
+import java.util.Map;
+import java.util.ArrayList;
 
 /**
  * Cliente de chat con interfaz gráfica (GUI)
@@ -136,9 +138,12 @@ public class ChatClientGUI extends UnicastRemoteObject implements ChatClientInte
                 // Actualizar lista de usuarios
                 updateUserList();
                 
-                // Iniciar timer para actualizar lista periódicamente
-                Timer timer = new Timer(3000, e -> updateUserList());
-                timer.start();
+                // Iniciar timer para polling de mensajes y usuarios (cada 2 segundos)
+                Timer pollingTimer = new Timer(2000, e -> {
+                    updateUserList();
+                    fetchPendingMessages();
+                });
+                pollingTimer.start();
             } else {
                 appendToChat("❌ Error: El nombre de usuario ya está en uso\n");
                 JOptionPane.showMessageDialog(frame, 
@@ -169,8 +174,8 @@ public class ChatClientGUI extends UnicastRemoteObject implements ChatClientInte
         
         try {
             server.broadcastMessage(username, message);
-            appendToChat("[Tú → Todos] " + message + "\n");
             messageField.setText("");
+            // El mensaje aparecerá cuando el servidor lo devuelva via polling
         } catch (RemoteException e) {
             appendToChat("❌ Error al enviar mensaje: " + e.getMessage() + "\n");
         }
@@ -217,26 +222,39 @@ public class ChatClientGUI extends UnicastRemoteObject implements ChatClientInte
     }
     
     /**
+     * Obtiene mensajes pendientes del servidor mediante polling
+     */
+    private void fetchPendingMessages() {
+        try {
+            Map<String, List<String>> pending = server.getPendingMessages(username);
+            List<String> messages = pending.getOrDefault("messages", new ArrayList<>());
+            
+            if (!messages.isEmpty()) {
+                for (String msg : messages) {
+                    appendToChat(msg + "\n");
+                }
+            }
+        } catch (RemoteException e) {
+            System.err.println("DEBUG: Error al obtener mensajes: " + e.getMessage());
+        }
+    }
+    
+    /**
      * Actualiza la lista de usuarios conectados
      */
     private void updateUserList() {
         try {
             List<String> users = server.getOnlineUsers();
-            System.out.println("DEBUG: Lista de usuarios recibida: " + users);
             SwingUtilities.invokeLater(() -> {
                 userListModel.clear();
                 for (String user : users) {
                     if (!user.equals(username)) {
-                        System.out.println("DEBUG: Agregando usuario a la lista: " + user);
                         userListModel.addElement(user);
                     }
                 }
-                System.out.println("DEBUG: Lista actualizada. Total en GUI: " + userListModel.size());
             });
         } catch (RemoteException e) {
             System.err.println("DEBUG: Error al actualizar lista: " + e.getMessage());
-            appendToChat("❌ Error al actualizar lista de usuarios\n");
-            e.printStackTrace();
         }
     }
     
