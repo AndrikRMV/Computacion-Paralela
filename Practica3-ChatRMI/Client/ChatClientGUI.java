@@ -330,11 +330,6 @@ public class ChatClientGUI extends UnicastRemoteObject implements ChatClientInte
                 
                 int port = Integer.parseInt(portStr);
                 new ChatClientGUI(username, serverIP, port);
-                // Configurar la propiedad para RMI
-                System.setProperty("java.rmi.server.hostname", 
-                    java.net.InetAddress.getLocalHost().getHostAddress());
-                
-                new ChatClientGUI(username, serverIP, port);
                 
             } catch (NumberFormatException e) {
                 JOptionPane.showMessageDialog(null,
