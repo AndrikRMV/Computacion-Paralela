@@ -323,8 +323,13 @@ public class ChatClientGUI extends UnicastRemoteObject implements ChatClientInte
             }
             
             try {
-                int port = Integer.parseInt(portStr);
+                // Configurar hostname del cliente para callbacks RMI
+                String clientIP = java.net.InetAddress.getLocalHost().getHostAddress();
+                System.setProperty("java.rmi.server.hostname", clientIP);
+                System.out.println("DEBUG: IP del cliente configurada: " + clientIP);
                 
+                int port = Integer.parseInt(portStr);
+                new ChatClientGUI(username, serverIP, port);
                 // Configurar la propiedad para RMI
                 System.setProperty("java.rmi.server.hostname", 
                     java.net.InetAddress.getLocalHost().getHostAddress());
